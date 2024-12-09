@@ -9,7 +9,9 @@ from llama_parse import LlamaParse
 from groq import Groq
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql import DataFrame as SparkDataFrame
 # Load environment variables
 load_dotenv()
 
@@ -25,25 +27,63 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 # Initialize Groq client
 groq_client = Groq(api_key=groq_api_key)
 
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("Spark Dataframes") \
+    .getOrCreate()
+
+
 # Set up database connection
 connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
 engine = create_engine(connection_string)
 
-def table_to_text(df):
-    column_names = df.columns.tolist()
-    rows = df.values.tolist()
+# def table_to_text(df):
+#     print("df type: ",type(df))
+#     column_names = df.columns.tolist()
+#     rows = df.values.tolist()
+#     formatted_text = ""
+#     for row in rows:
+#         for head, cell in zip(column_names[1:], row[1:]):
+#             if cell and not pd.isna(cell):
+#                 formatted_text += f"The {column_names[0]}:{row[0]} of {head} is {cell}. "
+#     return formatted_text
+
+from pyspark.sql import DataFrame as SparkDataFrame
+
+def table_to_text(df: SparkDataFrame):
+    
+    # Get column names
+    column_names = df.columns  # This is a list of column names
+    
+    # Collect rows as a list of Row objects
+    rows = df.collect()  # Collect rows from the DataFrame
+    
     formatted_text = ""
+    
     for row in rows:
-        for head, cell in zip(column_names[1:], row[1:]):
-            if cell and not pd.isna(cell):
-                formatted_text += f"The {column_names[0]}:{row[0]} of {head} is {cell}. "
+        # Convert Row object to a dictionary
+        row_dict = row.asDict()
+        
+        # Iterate over the columns, skipping the first one if needed
+        for head in column_names[1:]:
+            cell = row_dict[head]
+            if cell is not None:  # Check for None instead of NaN
+                formatted_text += f"The {column_names[0]}: {row_dict[column_names[0]]} of {head} is {cell}. "
+    
     return formatted_text
 
 def extract_table_from_db(table_name, engine):
     with engine.connect() as conn:
         conn.execute(text("USE arithmetic_questions"))
-        df = pd.read_sql(f"SELECT * FROM {table_name}", conn)
-    return df
+        pandas_df = pd.read_sql(f"SELECT * FROM {table_name}", conn)
+    
+    # Initialize SparkSession if not already done
+    spark = SparkSession.builder.getOrCreate()
+    
+    # Convert pandas DataFrame to Spark DataFrame
+    spark_df = spark.createDataFrame(pandas_df)
+    
+    return spark_df
 
 def prepare_context(engine):
     context = ""
@@ -63,7 +103,9 @@ def generate_answer_from_table_context(question, context):
     {context}
     Please answer the following question:
     {question}
-    Provide a detailed answer based on the information in the context. If the answer cannot be fully determined from the given information, explain what is known and what additional information might be needed.
+    At first try to perform word matchining between the context sentence and the question. The sentence with high word matching will be the facts that will be used to perform math operation and answer the question. 
+    If the answer cannot be fully determined from the given information, explain what is known and what additional information might be needed.
+    Also write the final complete sentence of the answer in bold.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.2-3b-preview",

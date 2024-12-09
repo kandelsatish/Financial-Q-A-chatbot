@@ -44,12 +44,13 @@ groq_client = Groq(api_key=groq_api_key)
 connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
 engine = create_engine(connection_string)
 
+
+
 def empty_arithmetic_questions_db():
     try:
         with engine.connect() as conn:
             conn.execute(text("DROP DATABASE arithmetic_questions"))
             conn.execute(text("CREATE DATABASE arithmetic_questions"))
-            conn.commit()
         st.success("Arithmetic questions database emptied successfully.")
     except Exception as e:
         st.error(f"Error emptying arithmetic questions database: {str(e)}")
@@ -67,8 +68,11 @@ def process_user_question(question, context, question_type):
         answer = generate_answer_from_text_context(question, relevant_context)
     return answer
 
+
 def main():
-    st.title("Financial Q&A Chatbot")
+    # Set page configuration
+    st.set_page_config(page_title="Financial Q&A Chatbot",page_icon="💵",layout="centered")
+    st.title("Welcome to Financial Q&A Chatbot 💵🤖")
     uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
 
     if uploaded_file is not None:

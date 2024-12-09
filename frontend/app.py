@@ -2,7 +2,7 @@ import streamlit as st
 
 # Set page configuration
 st.set_page_config(
-    page_title="MoneyChat",
+    page_title="Financial Q&A Chatbot",
     page_icon="💵",
     layout="wide",
 )
