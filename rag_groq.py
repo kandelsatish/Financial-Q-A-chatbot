@@ -12,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql import DataFrame as SparkDataFrame
 # Load environment variables
 load_dotenv()
 
@@ -32,23 +33,11 @@ spark = SparkSession.builder \
     .appName("Spark Dataframes") \
     .getOrCreate()
 
-
 # Set up database connection
 connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
 engine = create_engine(connection_string)
 
-# def table_to_text(df):
-#     print("df type: ",type(df))
-#     column_names = df.columns.tolist()
-#     rows = df.values.tolist()
-#     formatted_text = ""
-#     for row in rows:
-#         for head, cell in zip(column_names[1:], row[1:]):
-#             if cell and not pd.isna(cell):
-#                 formatted_text += f"The {column_names[0]}:{row[0]} of {head} is {cell}. "
-#     return formatted_text
 
-from pyspark.sql import DataFrame as SparkDataFrame
 
 def table_to_text(df: SparkDataFrame):
     
@@ -111,6 +100,7 @@ def generate_answer_from_table_context(question, context):
 
 1. Word Matching:
    - Perform strict word matching between the context sentences and the question.
+   - Look for financial terms, year, and mathematical terms.
    - Identify sentences with high word match as they are likely most relevant to the question.
 
 2. Question Analysis:
