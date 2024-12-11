@@ -6,5 +6,4 @@ finqa/
 .vscode/
 __pycache__/
 frontend/
-models/
 notebook/
