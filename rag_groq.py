@@ -74,8 +74,12 @@ def table_to_text(df: SparkDataFrame):
 
 def extract_table_from_db(table_name, engine):
     with engine.connect() as conn:
-        conn.execute(text("USE arithmetic_questions"))
-        pandas_df = pd.read_sql(f"SELECT * FROM {table_name}", conn)
+        conn.execute(text(f"USE {database}"))
+        pandas_df = pd.read_sql(f"SELECT * FROM {table_name}", conn)\
+        
+    # Convert all columns to string type
+    for col in pandas_df.columns:
+        pandas_df[col] = pandas_df[col].astype(str)
     
     # Initialize SparkSession if not already done
     spark = SparkSession.builder.getOrCreate()
@@ -88,7 +92,7 @@ def extract_table_from_db(table_name, engine):
 def prepare_context(engine):
     context = ""
     with engine.connect() as conn:
-        conn.execute(text("USE arithmetic_questions"))
+        conn.execute(text(f"USE {database}"))
         tables = conn.execute(text("SHOW TABLES")).fetchall()
         table_names = [table[0] for table in tables]
         for table_name in table_names:
@@ -103,9 +107,33 @@ def generate_answer_from_table_context(question, context):
     {context}
     Please answer the following question:
     {question}
-    At first try to perform word matchining between the context sentence and the question. The sentence with high word matching will be the facts that will be used to perform math operation and answer the question. 
-    If the answer cannot be fully determined from the given information, explain what is known and what additional information might be needed.
-    Also write the final complete sentence of the answer in bold.
+   You are a highly skilled mathematical assistant with access to contextual information. Your task is to answer questions accurately and concisely based on the provided context. Follow these steps:
+
+1. Word Matching:
+   - Perform strict word matching between the context sentences and the question.
+   - Identify sentences with high word match as they are likely most relevant to the question.
+
+2. Question Analysis:
+   - Carefully analyze the question to understand what is being asked.
+   - Determine if any mathematical operations are required to answer the question.
+
+3. Context Utilization:
+   - Focus on the most relevant parts of the context based on word matching and question analysis.
+   - Extract only the information necessary to answer the question.
+
+4. Mathematical Processing:
+   - If required, perform the necessary mathematical operations using the relevant information from the context.
+   - Ensure calculations are accurate and appropriate for the question.
+
+5. Answer Formulation:
+   - Construct a clear and concise answer using only the relevant information and results.
+   - Avoid including extraneous details not directly related to the question.
+
+6. Final Response:
+   - Provide your answer in a concise manner.
+   - End with a complete sentence summarizing the answer, formatted in bold.
+
+Remember: Prioritize accuracy, relevance, and conciseness in your responses. Only include information that directly contributes to answering the question at hand.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.2-3b-preview",
