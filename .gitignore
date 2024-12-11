@@ -5,3 +5,6 @@ pdf_files/
 finqa/
 .vscode/
 __pycache__/
+frontend/
+models/
+notebook/
