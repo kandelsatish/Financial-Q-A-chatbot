@@ -20,9 +20,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # loading the rf vectorizer and classifier model
-with open('/home/bijay/capstone_project/Financial-Q-A-chatbot/models/rf_tfidfvectorizer.pkl', 'rb') as f:
+with open('./models/rf_tfidfvectorizer.pkl', 'rb') as f:
     vectorizer = pkl.load(f)
-with open('/home/bijay/capstone_project/Financial-Q-A-chatbot/models/rf_classifer_model.pkl', 'rb') as f:
+with open('./models/rf_classifer_model.pkl', 'rb') as f:
     model = pkl.load(f)
 
 # Suppress warnings and configure logging
